@@ -4,9 +4,11 @@ This programmer is based on MCUDude Arduino Major/Mighty Core and can program 27
 
 # Features
 
-* Load and unload data over UART in Intel HEX format
+* Load and unload data over 5V UART in Intel HEX format
 
-* Small count of parts
+* Small count of components
+
+* Based on wide range of cheap microcontrollers.
 
 # Schematic
 
