@@ -14,6 +14,8 @@ This programmer is based on MCUDude Arduino Major/Mighty Core and can program 27
 
 Compatible microcontrollers are all https://github.com/MCUdude/MajorCore and https://github.com/MCUdude/MightyCore (standard pinout) ATmegas.
 
+Tested with 12MHz crystal - 8MHz (lesser pre-built MCUDude core profile) may be too slow.
+
 You can find example schematic that uses ATmega8515 in kicad folder:
 
 ![Schematic](https://github.com/dvarkin-ru/eprom_programmer/blob/master/kicad/programmer.png)
@@ -21,7 +23,7 @@ You can find example schematic that uses ATmega8515 in kicad folder:
 
 # Usage
 
-1. Connect device to PC over any UART converter.
+1. Connect device to PC over any UART converter @ 9600 baud.
 
 2. In your serial communication program (minicom as example) press inserted chip code (w/o Enter):
 
