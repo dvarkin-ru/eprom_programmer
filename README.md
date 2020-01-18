@@ -51,3 +51,4 @@ You can find example schematic that uses ATmega8515 in kicad folder:
   
   * This projest is based on https://github.com/walhi/arduino_eprom27_programmer
   * 27C512 programmer @ http://kovlev.ru/tools.html
+  * objcopy (GNU tool, part of Arduino IDE as avr-objcopy) - convert from binary to ihex and vice-versa.
