@@ -17,6 +17,7 @@ Compatible microcontrollers are all https://github.com/MCUdude/MajorCore and htt
 You can find example schematic that uses ATmega8515 in kicad folder:
 
 ![Schematic](https://github.com/dvarkin-ru/eprom_programmer/blob/master/kicad/programmer.png)
+![Image](https://github.com/dvarkin-ru/eprom_programmer/blob/master/image.jpg)
 
 # Usage
 
