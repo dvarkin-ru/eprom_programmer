@@ -35,7 +35,8 @@ You can find example schematic that uses ATmega8515 in kicad folder:
  
  "d" - 27C256.
 
- If you want to program 2716, 2764, 27128 or 27256 press "N" and switch to 300 baud (Ctrl-A P menu in minicom).
+ If you want to program 2716, 2764, 27128 or 27256 press "N" and limit char tx delay to 100 ms (Ctrl-A T F in minicom).
+
 3. Modes:
 
   * For erase verify press "f": if all bytes are 0xFF - chip is clear.
@@ -51,6 +52,7 @@ You can find example schematic that uses ATmega8515 in kicad folder:
   * Huge HEX : HEX record must be no more than 16 bytes of HEX data.
   * UNK REC TYPE : unknown HEX record type.
   * CHKSUM ERR @ XXXX : HEX checksum error.
+  * TOO HIGH ADDR : address of HEX record last byte out of selected chip memory space.
   
   # See also
   

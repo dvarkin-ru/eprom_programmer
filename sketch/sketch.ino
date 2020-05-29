@@ -70,9 +70,8 @@ void setup() {
   
   Serial.begin(57600);
   // One Intel HEX byte is 2 UART bytes @ 57600  baud =
-  // = 0,000277777 s = 277,277 us > 110 us write.
+  // = 0,000277777 s = 277,777 us > 110 us CMOS write.
   // (baud as bit/s)
-  // And for NMOS @ 300 baud = 0,053333 s = 53,3 ms > 50 ms
 }
 
 void loop() {
@@ -164,18 +163,10 @@ void select_chip (chipType new_chip) {
 }
 
 void toggle_nmos() {
-  if (nmos) {
-    nmos = FALSE;
-    Serial.println("Switching to 57600 baud");
-    Serial.flush();
-    Serial.end();
-    Serial.begin(57600);
-  } else {
+  if (nmos) nmos = FALSE;
+  else {
     nmos = TRUE;
-    Serial.println("Switching to 300 baud");
-    Serial.flush();
-    Serial.end();
-    Serial.begin(300);
+    Serial.println("Also set char tx delay to 100 ms");
   }
 }
 
@@ -232,6 +223,10 @@ bool recieve_HEX_record() {
     Serial.printf("CHKSUM ERR @ %04X\r\n", load_offset);
     return FALSE;
   }
+  if (load_offset + rec_len - 1 > end_address) {
+    Serial.println("TOO HIGH ADDR");
+    return FALSE;
+  }
   return TRUE;
 }
 
@@ -240,7 +235,7 @@ bool write_HEX_record() {
   for (uint8_t i = 0, err = 0; i < rec_len; i++) {
     do write_byte(load_offset + i, buf[i]);
     while (buf[i] != read_byte() && ++err < 10);
-    if (err >= 10) { // to avoid Serial buffer overflow
+    if (err == 10) {
       Serial.printf("BAD 0x%04X\r\n", load_offset + i);
       return FALSE;
     }
@@ -303,55 +298,50 @@ uint8_t read_byte () {
   _delay_loop_1(3); // tOE delay
   uint8_t data = portRead(dataPort);
   digitalWrite(outputEnable, HIGH);
-  if (mode != WRITE) digitalWrite(chipEnable, HIGH);
+  digitalWrite(chipEnable, HIGH);
   return data;
 }
 
 
 void write_begin () {
+  if (chip != C256) digitalWrite(chipEnable, LOW);
   program_voltage_set(true);
-  switch (chip) {
-    case C64:
-    case C128:
-      digitalWrite(chipEnable, LOW);
-      break;
-    default:
-      break;
-  }
 }
 void write_end () {
-  switch (chip) {
-    case C64:
-    case C128:
-      digitalWrite(chipEnable, HIGH);
-      break;
-    default:
-      break;
-  }
-  program_voltage_set(false);
+  if (chip != C256) digitalWrite(chipEnable, HIGH);
 }
 
 void write_byte (uint16_t address, uint8_t data) {
-  portMode(dataPort, OUTPUT);
+  program_voltage_set(false);
   set_address(address);
+  if (read_byte() == data) return;
+  portMode(dataPort, OUTPUT);
   portWrite(dataPort, data);
-  // long tDS and tPW delays for slow crystals
+  if (chip != C256) digitalWrite(chipEnable, LOW);
+  program_voltage_set(true);
   delayMicroseconds(5); // tDS+
   switch (chip) {
+    case C16:
+      digitalWrite(chipEnable, HIGH);
+      if (nmos) delay(50);
+      else delayMicroseconds(100);
+      digitalWrite(chipEnable, LOW);
+      break;
     case C64:
     case C128:
       digitalWrite(PGM, LOW);
-      if (nmos) delayMicroseconds(100);
-      else delay(50);
+      if (nmos) delay(50);
+      else delayMicroseconds(100);
       digitalWrite(PGM, HIGH);
       break;
-    default:
+    case C256:
       digitalWrite(chipEnable, LOW);
-      if (nmos) delayMicroseconds(100);
-      else delay(50);
+      if (nmos) delay(50);
+      else delayMicroseconds(100);
       digitalWrite(chipEnable, HIGH);
       break;
   }
   delayMicroseconds(5); // tDH+
+  program_voltage_set(false);
   portMode(dataPort, INPUT_PULLUP);
 }
