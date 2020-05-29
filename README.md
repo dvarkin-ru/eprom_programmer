@@ -1,10 +1,10 @@
 # Simple EPROM programmer
 
-This programmer is based on MCUDude Arduino Major/Mighty Core and can program 27C64, 27C128, 27C256 chips (with "C"!).
+This programmer is based on MCUDude Arduino Major/Mighty Core and can program 2716, 27C16, 2764, 27C64, 27128, 27C128, 27256, 27C256 chips.
 
 # Features
 
-* Upload and download data over 5V UART in Intel HEX format with you favorite serial communication program.
+* Upload and download data over 5V UART in Intel HEX format.
 
 * Small count of components.
 
@@ -14,7 +14,7 @@ This programmer is based on MCUDude Arduino Major/Mighty Core and can program 27
 
 Compatible microcontrollers are all https://github.com/MCUdude/MajorCore and https://github.com/MCUdude/MightyCore (standard pinout) ATmegas.
 
-Tested with 12MHz crystal - 8MHz (lesser pre-built MCUDude core profile) may be too slow.
+Tested with 12MHz crystal.
 
 You can find example schematic that uses ATmega8515 in kicad folder:
 
@@ -23,21 +23,24 @@ You can find example schematic that uses ATmega8515 in kicad folder:
 
 # Usage
 
-1. Connect device to PC over any UART converter @ 9600 baud.
+1. Connect device to PC over any UART converter @ 57600 baud.
 
-2. In your serial communication program (minicom as example) press inserted chip code (w/o Enter):
+2. In your serial communication program (minicom) press inserted chip code (w/o Enter):
 
- "a" - 27C64,
+ "a" - 27C16,
  
- "b" - 27C128,
+ "b" - 27C64,
  
- "c" - 27C256.
+ "c" - 27C128,
  
+ "d" - 27C256.
+
+ If you want to program 2716, 2764, 27128 or 27256 press "N" and switch to 300 baud (Ctrl-A P menu in minicom).
 3. Modes:
 
   * For erase verify press "f": if all bytes are 0xFF - chip is clear.
   * For dump the chip press "r" and copy HEX to .hex file (or Ctrl-A L in minicom after step 2).
-  * For write press "w", check Vpp (correct it before with R8 w/o chip) and paste HEX file content .
+  * For write press "w", check Vpp (correct it before w/o chip) and paste HEX file content .
   * For verify press "v" and paste HEX file content (or Ctrl-A S "ascii" in minicom).
 
  ## Possible error messages:

@@ -11,11 +11,11 @@
 #define dataPort 2 //PORT C
 
 typedef enum chipType {
-  NONE = 0,
-  C64 = 1,
-  C128 = 2,
-  C256 = 3
-//  C512 = 4
+  NONE,
+  C16,
+  C64,
+  C128,
+  C256
 } Chip;
 
 typedef enum mode {
@@ -46,6 +46,7 @@ uint8_t read_HEX();
 chipType chip = NONE;
 Modes mode = WAIT;
 
+uint8_t nmos = 0;
 uint8_t rec_len; // recieved Intel HEX record len
 uint16_t load_offset; // recieved Intel HEX load offset
 uint16_t end_address;
@@ -61,16 +62,17 @@ void setup() {
   pinMode(programVoltageEnable, OUTPUT);
   digitalWrite(programVoltageEnable, LOW);
 
-  portMode(dataPort, INPUT_PULLUP);
+  portMode(dataPort, INPUT_PULLUP); //MCUDude lib
   portMode(addressLowPort, OUTPUT);
   portMode(addressHighPort, OUTPUT);
 
   digitalWrite(PGM, HIGH); //A14 in addressHighPort
-
-  Serial.begin(9600);
-  // One Intel HEX byte is 2 UART bytes / 9600  baud =
-  // = 0,000208333 s = 208,333 us > 110 us write.
-  // Used Stream nature of Serial.
+  
+  Serial.begin(57600);
+  // One Intel HEX byte is 2 UART bytes @ 57600  baud =
+  // = 0,000277777 s = 277,277 us > 110 us write.
+  // (baud as bit/s)
+  // And for NMOS @ 300 baud = 0,053333 s = 53,3 ms > 50 ms
 }
 
 void loop() {
@@ -121,16 +123,24 @@ void loop() {
           if (chip == NONE) Serial.println("ENTER CHIP");
           else mode = CLEAR_CHECK;
           break;
-        case 'a': select_chip(C64); break;
-        case 'b': select_chip(C128); break;
-        case 'c': select_chip(C256); break;
+        case 'a': select_chip(C16); break;
+        case 'b': select_chip(C64); break;
+        case 'c': select_chip(C128); break;
+        case 'd': select_chip(C256); break;
+        case 'n': toggle_nmos(); break;
       }
   }
 }
 
 void select_chip (chipType new_chip) {
-  Serial.print("27C");
+  Serial.print("27");
+  if (!nmos) Serial.print("C");
   switch (new_chip) {
+    case C16:
+      chip = new_chip;
+      end_address = 0x7ff;
+      Serial.println("16");
+      break;
     case C64:
       chip = new_chip;
       end_address = 0x1fff;
@@ -150,6 +160,22 @@ void select_chip (chipType new_chip) {
       chip = NONE;
       end_address = 0x0000;
       Serial.println("NONE");
+  }
+}
+
+void toggle_nmos() {
+  if (nmos) {
+    nmos = FALSE;
+    Serial.println("Switching to 57600 baud");
+    Serial.flush();
+    Serial.end();
+    Serial.begin(57600);
+  } else {
+    nmos = TRUE;
+    Serial.println("Switching to 300 baud");
+    Serial.flush();
+    Serial.end();
+    Serial.begin(300);
   }
 }
 
@@ -214,7 +240,7 @@ bool write_HEX_record() {
   for (uint8_t i = 0, err = 0; i < rec_len; i++) {
     do write_byte(load_offset + i, buf[i]);
     while (buf[i] != read_byte() && ++err < 10);
-    if (err >= 10) { // to avoid Serial buffer overflow only 10 errors for 16 bytes allowed
+    if (err >= 10) { // to avoid Serial buffer overflow
       Serial.printf("BAD 0x%04X\r\n", load_offset + i);
       return FALSE;
     }
@@ -259,7 +285,6 @@ uint16_t gen_address (uint16_t address) {
     case C128:
       high |= 1 << 6; // A14 (C256 and C512) is ~PGM for C64 and C128
       break;
-    case C256:
     default:
       break;
   }
@@ -275,7 +300,7 @@ void set_address (uint16_t address) {
 uint8_t read_byte () {
   digitalWrite(chipEnable, LOW);
   digitalWrite(outputEnable, LOW);
-  __asm__ __volatile__ ("nop\n\tnop\n\tnop\n\tnop\n\t"); // 250 ns (62.5 ns * 4) @ 16MHz // tOE+
+  _delay_loop_1(3); // tOE delay
   uint8_t data = portRead(dataPort);
   digitalWrite(outputEnable, HIGH);
   if (mode != WRITE) digitalWrite(chipEnable, HIGH);
@@ -290,7 +315,6 @@ void write_begin () {
     case C128:
       digitalWrite(chipEnable, LOW);
       break;
-    case C256:
     default:
       break;
   }
@@ -301,7 +325,6 @@ void write_end () {
     case C128:
       digitalWrite(chipEnable, HIGH);
       break;
-    case C256:
     default:
       break;
   }
@@ -318,12 +341,14 @@ void write_byte (uint16_t address, uint8_t data) {
     case C64:
     case C128:
       digitalWrite(PGM, LOW);
-      delayMicroseconds(100); // tPW
+      if (nmos) delayMicroseconds(100);
+      else delay(50);
       digitalWrite(PGM, HIGH);
       break;
-    case C256:
+    default:
       digitalWrite(chipEnable, LOW);
-      delayMicroseconds(100); // tPW
+      if (nmos) delayMicroseconds(100);
+      else delay(50);
       digitalWrite(chipEnable, HIGH);
       break;
   }
